@@ -1,0 +1,16 @@
+{
+  "name": "vibe-design-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "dev": "npm run dev --workspaces --if-present",
+    "clean": "rm -rf packages/*/dist",
+    "vibe": "node packages/cli/dist/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

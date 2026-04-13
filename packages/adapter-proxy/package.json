@@ -1,0 +1,23 @@
+{
+  "name": "@vibe-design/adapter-proxy",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "vibe-proxy": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "dependencies": {
+    "http-proxy": "^1.18.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0",
+    "@types/http-proxy": "^1.17.0"
+  }
+}

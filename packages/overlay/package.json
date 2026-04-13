@@ -1,0 +1,14 @@
+{
+  "name": "@vibe-design/overlay",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/overlay.global.js",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0"
+  }
+}
