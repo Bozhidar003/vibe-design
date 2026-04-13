@@ -529,6 +529,113 @@ export const OVERLAY_STYLES = `
     color: #555d6b;
   }
 
+  /* ─── Simple Mode Panel ───────────────────────────────────── */
+
+  .vibe-simple-panel {
+    position: fixed;
+    width: 320px;
+    background: rgba(12, 12, 16, 0.94);
+    backdrop-filter: blur(40px) saturate(1.4);
+    -webkit-backdrop-filter: blur(40px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.5),
+      0 16px 48px rgba(0,0,0,0.5);
+    pointer-events: auto;
+    z-index: 2147483647;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .vibe-simple-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #8891a0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .vibe-simple-input {
+    width: 100%;
+    min-height: 36px;
+    max-height: 120px;
+    resize: none;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: #e0e4ea;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.15s;
+    pointer-events: auto;
+    line-height: 1.4;
+  }
+
+  .vibe-simple-input:focus {
+    border-color: rgba(217,119,87,0.35);
+  }
+
+  .vibe-simple-input::placeholder {
+    color: #3d4555;
+  }
+
+  .vibe-simple-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .vibe-simple-send {
+    padding: 5px 12px;
+    border-radius: 7px;
+    background: #d97757;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .vibe-simple-send:hover {
+    background: #c56a4e;
+  }
+
+  .vibe-simple-send:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .vibe-simple-status {
+    font-size: 11px;
+    color: #555d6b;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .vibe-simple-status.working {
+    color: #e8a88a;
+  }
+
+  .vibe-simple-status.done {
+    color: #34d399;
+  }
+
+  .vibe-simple-status.error {
+    color: #f87171;
+  }
+
   /* ─── Scrollbar ──────────────────────────────────────────── */
 
   ::-webkit-scrollbar {

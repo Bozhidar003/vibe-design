@@ -21,9 +21,10 @@ program
   .command('start')
   .description('Start local vibe server + overlay injection')
   .option('-d, --dir <path>', 'Project directory', '.')
+  .option('-s, --simple', 'Simple mode — no FAB, click any element to edit directly')
   .action(async (opts) => {
     const { startCommand } = await import('./commands/start.js')
-    await startCommand(resolve(opts.dir))
+    await startCommand(resolve(opts.dir), { simple: opts.simple })
   })
 
 program

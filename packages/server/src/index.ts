@@ -11,8 +11,9 @@ export { loadConfig, type VibeConfig } from './config.js'
 export { renderDesignTask } from './task-writer.js'
 export { resolveFileFromHints } from './resolver.js'
 
-export async function createVibeServer(projectDir: string) {
+export async function createVibeServer(projectDir: string, options?: { overlayMode?: string }) {
   const config = await loadConfig(projectDir)
+  const overlayMode = options?.overlayMode || 'full'
   const app = express()
 
   // ─── Design System ─────────────────────────────────────────
@@ -326,7 +327,15 @@ export async function createVibeServer(projectDir: string) {
         join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'overlay', 'dist', 'overlay.global.js'),
       ]
       for (const p of paths) {
-        try { res.type('application/javascript').send(await readFile(p, 'utf-8')); return } catch { continue }
+        try {
+          let content = await readFile(p, 'utf-8')
+          // Inject mode so the overlay knows which UI to show
+          if (overlayMode === 'simple') {
+            content = `document.documentElement.dataset.vibeMode="simple";\n` + content
+          }
+          res.type('application/javascript').send(content)
+          return
+        } catch { continue }
       }
       res.status(404).json({ error: 'Overlay not found' })
     } catch (err) { res.status(500).json({ error: (err as Error).message }) }

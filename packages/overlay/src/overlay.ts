@@ -21,6 +21,11 @@ const QUICK_ACTIONS: QuickAction[] = [
 const VIBE_PORT = 2337
 const VIBE_URL = `http://${location.hostname}:${VIBE_PORT}`
 
+// ─── Mode Detection ─────────────────────────────────────────
+const urlParams = new URLSearchParams(location.search)
+const simpleMode = urlParams.has('vibe') && urlParams.get('vibe') === 'simple'
+  || document.documentElement.dataset.vibeMode === 'simple'
+
 // ─── State ──────────────────────────────────────────────────
 let designMode = false
 let selectedEl: HTMLElement | null = null
@@ -78,9 +83,19 @@ function initOverlay(): void {
     }
   })
 
-  renderFAB()
   initKeyboardShortcuts()
   connectWebSocket()
+
+  if (simpleMode) {
+    // Simple mode: always active, no FAB
+    designMode = true
+    document.addEventListener('mousemove', onHover, { capture: true })
+    document.addEventListener('click', onSelect, { capture: true })
+    document.body.style.cursor = 'crosshair'
+    console.log('[vibe-design] Simple mode active')
+  } else {
+    renderFAB()
+  }
 
   // Expose debug helper
   ;(window as any).__vibeDesign = {
@@ -259,8 +274,13 @@ function onSelect(e: MouseEvent): void {
   clearMultiSelection()
   clearHighlights()
   highlightElement(target)
-  openPromptPanel(target)
-  selectedEl = target  // Must be AFTER openPromptPanel (which calls closePanel → resets selectedEl)
+
+  if (simpleMode) {
+    openSimplePanel(target)
+  } else {
+    openPromptPanel(target)
+  }
+  selectedEl = target  // Must be AFTER open*Panel (which calls closePanel → resets selectedEl)
 }
 
 function isInsideOverlay(el: HTMLElement): boolean {
@@ -333,6 +353,79 @@ function clearHighlights(): void {
 }
 
 // ─── Prompt Panel (Single Select) ──────────────────────────
+// ─── Simple Mode Panel ──────────────────────────────────────
+function openSimplePanel(el: HTMLElement): void {
+  closePanel()
+  highlightElement(el)
+
+  const rect = el.getBoundingClientRect()
+  const identity = resolveComponent(el)
+  const tagName = el.tagName.toLowerCase()
+  const textHint = el.textContent?.trim().slice(0, 24) || ''
+  const label = identity.componentName || (textHint ? `<${tagName}> "${textHint}"` : `<${tagName}>`)
+
+  const panel = document.createElement('div')
+  panel.className = 'vibe-simple-panel'
+
+  const panelWidth = 320
+  const panelHeight = 130 // estimated
+  const gap = 12
+  const margin = 12
+
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+
+  // Try positions in priority order: right, left, floating corner
+  const spaceRight = vw - rect.right
+  const spaceLeft = rect.left
+
+  let left: number
+  let top: number
+
+  if (spaceRight > panelWidth + gap + margin) {
+    // Right of element
+    left = rect.right + gap
+    top = rect.top + (rect.height / 2) - (panelHeight / 2)
+  } else if (spaceLeft > panelWidth + gap + margin) {
+    // Left of element
+    left = rect.left - panelWidth - gap
+    top = rect.top + (rect.height / 2) - (panelHeight / 2)
+  } else {
+    // No horizontal space — float in bottom-right corner, always visible
+    left = vw - panelWidth - 24
+    top = vh - panelHeight - 24
+  }
+
+  // Clamp to viewport
+  top = Math.max(margin, Math.min(top, vh - panelHeight - margin))
+  left = Math.max(margin, Math.min(left, vw - panelWidth - margin))
+
+  panel.style.left = `${left}px`
+  panel.style.top = `${top}px`
+
+  panel.innerHTML = `
+    <div class="vibe-simple-label">${escapeHtml(label)}</div>
+    <textarea class="vibe-simple-input" placeholder="What do you want to change?" rows="2"></textarea>
+    <div class="vibe-simple-footer">
+      <button class="vibe-simple-send" data-action="submit">
+        Send <span class="vibe-submit-kbd">${isMac() ? '⌘' : 'Ctrl'}↵</span>
+      </button>
+      <div class="vibe-simple-status"></div>
+    </div>
+  `
+
+  container.appendChild(panel)
+
+  const textarea = panel.querySelector('.vibe-simple-input') as HTMLTextAreaElement
+  textarea?.focus()
+
+  // Auto-resize textarea
+  textarea?.addEventListener('input', () => {
+    textarea.style.height = 'auto'
+    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px'
+  })
+}
+
 function openPromptPanel(el: HTMLElement): void {
   closePanel()
 
@@ -700,15 +793,16 @@ function formatMultiPreview(contexts: EnrichedContext[], panel: HTMLElement): st
 
 // ─── Submit Task ────────────────────────────────────────────
 async function submitTask(): Promise<void> {
-  console.log('[vibe-design] submitTask called')
+  // Handle simple mode
+  const simplePanel = container.querySelector('.vibe-simple-panel') as HTMLElement
+  if (simplePanel && selectedEl) {
+    return submitSimpleTask(simplePanel)
+  }
+
   const panel = container.querySelector('.vibe-panel') as HTMLElement
-  console.log('[vibe-design] panel:', !!panel)
   if (!panel) return
 
-  // Determine if multi-select or single
-  console.log('[vibe-design] selectedEl:', !!selectedEl, 'multiSelect:', isMultiSelectMode, 'multiSize:', multiSelection.size)
   const elements = isMultiSelectMode ? Array.from(multiSelection) : (selectedEl ? [selectedEl] : [])
-  console.log('[vibe-design] elements count:', elements.length)
   if (elements.length === 0) return
 
   const submitBtn = panel.querySelector('.vibe-submit-btn') as HTMLButtonElement
@@ -781,6 +875,62 @@ async function submitTask(): Promise<void> {
   }
 }
 
+async function submitSimpleTask(panel: HTMLElement): Promise<void> {
+  if (!selectedEl) return
+
+  const textarea = panel.querySelector('.vibe-simple-input') as HTMLTextAreaElement
+  const intentText = textarea?.value?.trim()
+  if (!intentText) { textarea?.focus(); return }
+
+  const sendBtn = panel.querySelector('.vibe-simple-send') as HTMLButtonElement
+  const statusEl = panel.querySelector('.vibe-simple-status') as HTMLElement
+  if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'Working...' }
+  if (statusEl) { statusEl.textContent = ''; statusEl.className = 'vibe-simple-status working' }
+
+  try {
+    const context = buildEnrichedContext(selectedEl, intentText, {
+      quickAction: undefined,
+      constraints: { tailwindOnly: true, keepAccessible: true, allowNewDependencies: false, allowNewFiles: false },
+      includeScreenshots: false,
+    })
+
+    const response = await fetch(`${VIBE_URL}/task`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(context),
+    })
+
+    if (!response.ok) throw new Error(`${response.status}`)
+
+    if (statusEl) { statusEl.textContent = 'Claude is working...'; statusEl.className = 'vibe-simple-status working' }
+
+    // Poll for completion
+    let attempts = 0
+    const poll = setInterval(async () => {
+      attempts++
+      if (attempts > 120) { clearInterval(poll); done('Timed out'); return }
+      try {
+        const r = await fetch(`${VIBE_URL}/health`)
+        if (r.ok) {
+          const d = await r.json()
+          if (!d.claudeBusy && attempts > 3) { clearInterval(poll); done('Done') }
+        }
+      } catch {}
+    }, 1000)
+
+    function done(msg: string) {
+      if (sendBtn) { sendBtn.disabled = false; sendBtn.innerHTML = `Send <span class="vibe-submit-kbd">${isMac() ? '⌘' : 'Ctrl'}↵</span>` }
+      if (statusEl) { statusEl.textContent = msg === 'Done' ? '✓' : msg; statusEl.className = `vibe-simple-status ${msg === 'Done' ? 'done' : 'error'}` }
+      if (textarea) textarea.value = ''
+      // Auto-close after success
+      if (msg === 'Done') setTimeout(() => closePanel(), 1500)
+    }
+  } catch (err) {
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.innerHTML = `Send <span class="vibe-submit-kbd">${isMac() ? '⌘' : 'Ctrl'}↵</span>` }
+    if (statusEl) { statusEl.textContent = 'Failed'; statusEl.className = 'vibe-simple-status error' }
+  }
+}
+
 function pollForDone(panel: HTMLElement, submitBtn: HTMLButtonElement | null): void {
   let attempts = 0
   const maxAttempts = 120 // poll for up to 2 minutes
@@ -844,7 +994,7 @@ function updateStatusBar(): void {
 
 // ─── Panel Close ────────────────────────────────────────────
 function closePanel(): void {
-  container.querySelectorAll('.vibe-panel').forEach((p) => p.remove())
+  container.querySelectorAll('.vibe-panel, .vibe-simple-panel').forEach((p) => p.remove())
   selectedEl = null
   activeQuickAction = null
   clearHighlights()
