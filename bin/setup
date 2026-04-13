@@ -1,0 +1,33 @@
+#!/bin/bash
+set -e
+
+# ─── Vibe Design Setup ──────────────────────────────────────
+# Usage: bin/setup /path/to/your/project [--simple]
+
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+PROJECT_DIR="${1:-.}"
+FLAGS=""
+
+# Collect flags
+for arg in "${@:2}"; do
+  FLAGS="$FLAGS $arg"
+done
+
+# Resolve project dir
+if [ -d "$PROJECT_DIR" ]; then
+  PROJECT_DIR="$(cd "$PROJECT_DIR" && pwd)"
+else
+  echo "Error: $PROJECT_DIR is not a directory"
+  exit 1
+fi
+
+# Build if needed
+if [ ! -f "$SCRIPT_DIR/packages/cli/dist/index.js" ]; then
+  echo "  Building vibe-design..."
+  cd "$SCRIPT_DIR"
+  npm install --silent 2>/dev/null
+  npm run build --silent 2>/dev/null
+fi
+
+# Run setup command (init + start)
+exec node "$SCRIPT_DIR/packages/cli/dist/index.js" setup "$PROJECT_DIR" $FLAGS

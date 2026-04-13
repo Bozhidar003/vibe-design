@@ -9,6 +9,15 @@ program
   .version('0.1.0')
 
 program
+  .command('setup [dir]')
+  .description('One command — init + start (the fastest way to get going)')
+  .option('-s, --simple', 'Simple mode — no FAB, click any element to edit directly')
+  .action(async (dir, opts) => {
+    const { setupCommand } = await import('./commands/setup.js')
+    await setupCommand(resolve(dir || '.'), { simple: opts.simple })
+  })
+
+program
   .command('init')
   .description('Detect stack, generate .vibe/, inject adapter, write Claude Code skills')
   .option('-d, --dir <path>', 'Project directory', '.')
