@@ -9,6 +9,36 @@ import {
   generateClaudeSkill,
 } from '@vibe-design/skill-generator'
 
+const FRONTEND_DESIGN_SKILL = `# Frontend Design Skill
+
+This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. When making design changes, implement real working code with exceptional attention to aesthetic details and creative choices.
+
+## Design Thinking
+
+Before making changes, understand the context and commit to a BOLD aesthetic direction:
+- **Purpose**: What problem does this interface solve? Who uses it?
+- **Tone**: Match the existing design language, or if the user asks for improvement, pick an intentional direction: brutally minimal, maximalist, retro-futuristic, organic/natural, luxury/refined, playful, editorial, brutalist, art deco, soft/pastel, industrial, etc.
+- **Differentiation**: What makes this UNFORGETTABLE? Bold maximalism and refined minimalism both work — the key is intentionality, not intensity.
+
+## Aesthetics Guidelines
+
+- **Typography**: Choose fonts that are beautiful and distinctive. Avoid generic fonts like Arial and Inter. Pair a distinctive display font with a refined body font. Use letter-spacing (tracking) intentionally.
+- **Color & Theme**: Commit to a cohesive aesthetic. Use CSS variables for consistency. Dominant colors with sharp accents outperform timid, evenly-distributed palettes.
+- **Motion**: Use animations and micro-interactions. Focus on high-impact moments: staggered reveals on page load, scroll-triggered effects, surprising hover states. Prefer CSS transitions for simple effects.
+- **Spatial Composition**: Consider asymmetry, overlap, diagonal flow, grid-breaking elements. Generous negative space OR controlled density — both work when intentional.
+- **Backgrounds & Visual Details**: Create atmosphere and depth. Use gradient meshes, noise textures, geometric patterns, layered transparencies, dramatic shadows, decorative borders.
+
+## Anti-Patterns to Avoid
+
+NEVER use:
+- Overused font families (Inter, Roboto, Arial, system fonts)
+- Cliched color schemes (particularly purple gradients on white backgrounds)
+- Predictable layouts and cookie-cutter component patterns
+- Generic aesthetics that lack context-specific character
+
+Every design change should feel intentionally crafted for the specific context. Match implementation complexity to the aesthetic vision — maximalist designs need elaborate code, minimalist designs need precision and restraint.
+`
+
 async function fileExists(path: string): Promise<boolean> {
   try {
     await access(path)
@@ -53,6 +83,28 @@ export async function initCommand(projectDir: string): Promise<void> {
   console.log('')
 
   // Step 2: Generate .vibe/ directory
+  // Step 2a: Update .gitignore
+  try {
+    const gitignorePath = join(projectDir, '.gitignore')
+    let gitignore = ''
+    try { gitignore = await readFile(gitignorePath, 'utf-8') } catch { /* no .gitignore */ }
+
+    const vibeEntries = [
+      '# vibe-design (dev-only)',
+      '.vibe/tasks/',
+      '.vibe/screenshots/',
+      '.vibe/tasks/.current-prompt.txt',
+    ]
+
+    const missing = vibeEntries.filter(e => !e.startsWith('#') && !gitignore.includes(e))
+    if (missing.length > 0) {
+      const block = '\n' + vibeEntries.join('\n') + '\n'
+      await writeFile(gitignorePath, gitignore.trimEnd() + block)
+    }
+  } catch {
+    // Non-critical
+  }
+
   const genSpinner = ora('Generating .vibe/ configuration...').start()
 
   try {
@@ -75,17 +127,45 @@ export async function initCommand(projectDir: string): Promise<void> {
     process.exit(1)
   }
 
-  // Step 3: Write Claude Code skill
-  const skillSpinner = ora('Writing Claude Code skill...').start()
+  // Step 3: Write Claude Code skills
+  const skillSpinner = ora('Writing Claude Code skills...').start()
 
   try {
     const claudeSkillDir = join(projectDir, '.claude', 'skills', 'vibe-design')
     await mkdir(claudeSkillDir, { recursive: true })
     await writeFile(join(claudeSkillDir, 'VIBE_DESIGN.md'), generateClaudeSkill())
-    skillSpinner.succeed('Written .claude/skills/vibe-design/VIBE_DESIGN.md')
+    await writeFile(join(claudeSkillDir, 'FRONTEND_DESIGN.md'), FRONTEND_DESIGN_SKILL)
+    skillSpinner.succeed('Written Claude Code skills (VIBE_DESIGN.md + FRONTEND_DESIGN.md)')
   } catch (err) {
-    skillSpinner.fail('Failed to write Claude Code skill')
+    skillSpinner.fail('Failed to write Claude Code skills')
     console.error(chalk.red(`  Error: ${(err as Error).message}`))
+  }
+
+  // Step 3b: Initialize design system with defaults
+  const dsSpinner = ora('Initializing design system...').start()
+  try {
+    const dsPath = join(projectDir, '.vibe', 'design-system.json')
+    if (!(await fileExists(dsPath))) {
+      const defaultDS = {
+        rules: [
+          'Use rounded-lg for cards, rounded-full for buttons and pills',
+          'Spacing: p-4 for cards, p-6 for sections, gap-4 for lists',
+          'Typography: text-sm for labels, text-base for body, text-xl+ for headings',
+          'Always include hover: and focus: states on interactive elements',
+          'Use shadow-sm for subtle elevation, shadow-md for cards, shadow-lg for modals',
+          'Transitions: transition-colors duration-150 for color changes',
+          'Prefer semantic color tokens over raw Tailwind colors when available',
+          'Design should be distinctive and intentional — avoid generic AI aesthetics',
+        ],
+        updatedAt: new Date().toISOString(),
+      }
+      await writeFile(dsPath, JSON.stringify(defaultDS, null, 2))
+      dsSpinner.succeed('Initialized design system with defaults')
+    } else {
+      dsSpinner.succeed('Design system already exists')
+    }
+  } catch (err) {
+    dsSpinner.warn('Could not initialize design system')
   }
 
   // Step 4: Inject framework adapter

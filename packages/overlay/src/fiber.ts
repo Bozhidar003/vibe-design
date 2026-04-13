@@ -6,23 +6,41 @@ import type { ComponentIdentity } from './types.js'
  */
 // React/Next.js internal component names to skip — these are never what the user wants
 const FRAMEWORK_INTERNALS = new Set([
+  // Next.js internals — comprehensive list
   'SegmentViewNode', 'InnerLayoutRouter', 'OuterLayoutRouter', 'RenderFromTemplateContext',
   'ScrollAndFocusHandler', 'RedirectErrorBoundary', 'NotFoundErrorBoundary',
+  'RedirectBoundary', 'NotFoundBoundary', 'DevRootNotFoundBoundary',
   'LoadingBoundary', 'ErrorBoundary', 'InnerScrollAndFocusHandler',
   'ClientPageRoot', 'ClientSegmentRoot', 'LayoutSegment',
-  'Suspense', 'Fragment', 'StrictMode', 'Profiler', 'Provider', 'Consumer',
-  'ForwardRef', 'Memo', 'Lazy', 'Portal',
-  'ServerRoot', 'AppRouter', 'HotReload', 'ReactDevOverlay',
+  'LayoutRouterContext', 'LayoutRouter', 'AppRouter', 'HotReload', 'ReactDevOverlay',
   'PathnameContextProviderAdapter', 'MetadataBoundary', 'ViewportBoundary',
-  'OuterLayoutRouter', 'RootLayout',
+  'RootLayout', 'ServerRoot', 'GlobalError',
+  'AppTreeContext', 'TemplateContext', 'FlightDataContext',
+  'HTTPAccessFallbackBoundary', 'HTTPAccessErrorBoundary',
+  'ClientRouter', 'ServerComponentWrapper', 'RouteMatcher',
+  'Head', 'Html', 'Main', 'NextScript', 'Document',
+  // React internals
+  'Suspense', 'Fragment', 'StrictMode', 'Profiler', 'Provider', 'Consumer',
+  'ForwardRef', 'Memo', 'Lazy', 'Portal', 'OffscreenComponent',
+  // Common wrappers that aren't user components
+  'ThemeProvider', 'NextIntlClientProvider', 'SessionProvider', 'QueryClientProvider',
 ])
+
+// Also skip names that match common framework patterns
+function isFrameworkPattern(name: string): boolean {
+  return /^(Internal|__|\$)/.test(name) ||
+    /Boundary$/.test(name) ||
+    /Provider$/.test(name) ||
+    /Context$/.test(name) ||
+    /Router$/.test(name) ||
+    /Wrapper$/.test(name)
+}
 
 function isUserComponent(name: string | null | undefined): boolean {
   if (!name || typeof name !== 'string') return false
   if (!/^[A-Z]/.test(name)) return false
   if (FRAMEWORK_INTERNALS.has(name)) return false
-  // Skip generic single-word internals that start with __
-  if (name.startsWith('__')) return false
+  if (isFrameworkPattern(name)) return false
   return true
 }
 

@@ -68,4 +68,13 @@ program
     await ejectCommand(resolve(opts.dir))
   })
 
+program
+  .command('design-system <action> [value]')
+  .description('Manage design system rules (list, add, remove, init)')
+  .option('-d, --dir <path>', 'Project directory', '.')
+  .action(async (action, value, opts) => {
+    const { designSystemCommand } = await import('./commands/design-system.js')
+    await designSystemCommand(resolve(opts.dir), action, value)
+  })
+
 program.parse()

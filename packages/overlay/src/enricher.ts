@@ -126,42 +126,71 @@ export function augmentIntent(
 ): string {
   const augmentations: string[] = []
 
-  // Detect low contrast
+  // ─── Always-on analysis (not keyword-gated) ───────────────
   const color = parseRgba(computedStyles.color)
   const bg = parseRgba(computedStyles.backgroundColor)
+
+  // Contrast check — always run
   if (color && bg) {
     const contrast = getContrastRatio(color, bg)
-    if (contrast < 4.5 && /visible|readable|see|contrast|faint|dim|light/i.test(rawIntent)) {
-      augmentations.push(
-        `Current contrast ratio is ${contrast.toFixed(1)}:1 (WCAG AA requires 4.5:1).`
-      )
+    if (contrast < 4.5) {
+      augmentations.push(`⚠ Contrast ratio: ${contrast.toFixed(1)}:1 (WCAG AA needs 4.5:1).`)
     }
   }
 
-  // Detect small text
+  // Font size analysis
   const fontSize = parseFloat(computedStyles.fontSize)
-  if (fontSize < 14 && /small|bigger|larger|visible|readable|tiny|increase/i.test(rawIntent)) {
-    augmentations.push(
-      `Current font size is ${fontSize}px (${className || 'computed'} resolves to this).`
-    )
+  if (fontSize < 12) {
+    augmentations.push(`⚠ Very small text: ${fontSize}px.`)
   }
 
-  // Detect spacing issues
+  // Missing hover/focus states (buttons, links)
+  if (className && !className.includes('hover:') && !className.includes('focus:')) {
+    const isInteractive = className.includes('cursor-pointer') ||
+      className.includes('btn') ||
+      /rounded.*bg-/.test(className)
+    if (isInteractive) {
+      augmentations.push('Missing hover/focus states — interactive element should have hover: and focus: variants.')
+    }
+  }
+
+  // No border-radius on what looks like a button/card
+  if (className && !className.includes('rounded') && /bg-\w/.test(className)) {
+    augmentations.push('Element has background color but no border-radius.')
+  }
+
+  // ─── Keyword-triggered deeper analysis ────────────────────
+
+  // "better" / "improve" / "polish" — give design suggestions
+  if (/better|improve|polish|upgrade|enhance|nicer|modern|clean/i.test(rawIntent)) {
+    const suggestions: string[] = []
+
+    if (!className.includes('shadow')) suggestions.push('consider adding shadow-sm or shadow-md for depth')
+    if (!className.includes('transition')) suggestions.push('add transition-colors or transition-all for smooth interactions')
+    if (fontSize < 14) suggestions.push('consider increasing font size for readability')
+    if (!className.includes('tracking')) suggestions.push('consider letter-spacing (tracking-tight or tracking-wide)')
+
+    if (suggestions.length > 0) {
+      augmentations.push(`Design suggestions: ${suggestions.join('; ')}.`)
+    }
+  }
+
+  // Spacing keywords
   if (/spacing|cramped|tight|breathe|room|padding|margin|squished/i.test(rawIntent)) {
     augmentations.push(
-      `Current padding: ${computedStyles.padding}. Parent gap: ${computedStyles.gap || 'none'}.`
+      `Current padding: ${computedStyles.padding}. Gap: ${computedStyles.gap || 'none'}.`
     )
   }
 
-  // Detect alignment issues
+  // Alignment keywords
   if (/align|center|middle|left|right/i.test(rawIntent)) {
     augmentations.push(
-      `Current display: ${computedStyles.display}, align-items: ${computedStyles.alignItems}, justify-content: ${computedStyles.justifyContent}.`
+      `Layout: display=${computedStyles.display}, align=${computedStyles.alignItems}, justify=${computedStyles.justifyContent}.`
     )
   }
 
   if (augmentations.length > 0) {
-    return `${rawIntent}\n\n[Enrichment context: ${augmentations.join(' ')}]`
+    return `${rawIntent}\n\n[Enrichment: ${augmentations.join(' ')}]`
   }
   return rawIntent
 }

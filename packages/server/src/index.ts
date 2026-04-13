@@ -15,6 +15,33 @@ export async function createVibeServer(projectDir: string) {
   const config = await loadConfig(projectDir)
   const app = express()
 
+  // ─── Design System ─────────────────────────────────────────
+  // Persistent design decisions that inform all prompts
+  let designSystemRules: string[] = []
+
+  async function loadDesignSystem(): Promise<void> {
+    try {
+      const dsPath = join(projectDir, '.vibe', 'design-system.json')
+      const content = await readFile(dsPath, 'utf-8')
+      const ds = JSON.parse(content)
+      designSystemRules = ds.rules || []
+      console.log(`[vibe-design] 📐 Loaded ${designSystemRules.length} design system rules`)
+    } catch {
+      // No design system yet — that's fine
+      designSystemRules = []
+    }
+  }
+
+  async function saveDesignSystem(rules: string[]): Promise<void> {
+    designSystemRules = rules
+    const dsPath = join(projectDir, '.vibe', 'design-system.json')
+    await mkdir(join(projectDir, '.vibe'), { recursive: true })
+    await writeFile(dsPath, JSON.stringify({ rules, updatedAt: new Date().toISOString() }, null, 2))
+  }
+
+  // Load on startup
+  loadDesignSystem()
+
   // ─── Task Execution ───────────────────────────────────────
   let busy = false
 
@@ -93,7 +120,7 @@ export async function createVibeServer(projectDir: string) {
     lines.push(`DESIGN TASK: "${intent}"`)
     if (augmented && augmented !== intent) {
       // Extract the enrichment context part
-      const enrichment = augmented.split('[Enrichment context:')[1]?.replace(']', '').trim()
+      const enrichment = (augmented.split('[Enrichment:')[1] || augmented.split('[Enrichment context:')[1])?.replace(/\]$/, '').trim()
       if (enrichment) lines.push(`CONTEXT: ${enrichment}`)
     }
     lines.push('')
@@ -141,6 +168,11 @@ export async function createVibeServer(projectDir: string) {
       lines.push(`DESIGN TOKENS: ${tokenStr}`)
     }
 
+    // Include design system decisions if they exist
+    if (designSystemRules.length > 0) {
+      lines.push(`DESIGN SYSTEM: ${designSystemRules.join('; ')}`)
+    }
+
     // Constraints
     const rules = []
     if (c.tailwindOnly) rules.push('Tailwind classes only')
@@ -150,6 +182,11 @@ export async function createVibeServer(projectDir: string) {
 
     // Page URL
     if (body.page?.url) lines.push(`PAGE: ${body.page.url}`)
+
+    // If this is a design/aesthetic task, reference the design skill
+    if (/better|improve|polish|beautiful|modern|clean|redesign|style|look|vibe|aesthetic/i.test(intent)) {
+      lines.push('SKILL: Follow .claude/skills/vibe-design/FRONTEND_DESIGN.md — make it distinctive, not generic.')
+    }
 
     lines.push('')
     lines.push('Edit the file now. Minimal change. No explanation needed.')
@@ -185,6 +222,32 @@ export async function createVibeServer(projectDir: string) {
 
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', version: '0.1.0', claudeBusy: busy })
+  })
+
+  // Design system CRUD
+  app.get('/design-system', (_req, res) => {
+    res.json({ rules: designSystemRules })
+  })
+
+  app.post('/design-system', async (req, res) => {
+    const { rules } = req.body
+    if (Array.isArray(rules)) {
+      await saveDesignSystem(rules)
+      res.json({ status: 'ok', rules: designSystemRules })
+    } else {
+      res.status(400).json({ error: 'rules must be an array of strings' })
+    }
+  })
+
+  app.post('/design-system/add', async (req, res) => {
+    const { rule } = req.body
+    if (typeof rule === 'string' && rule.trim()) {
+      designSystemRules.push(rule.trim())
+      await saveDesignSystem(designSystemRules)
+      res.json({ status: 'ok', rules: designSystemRules })
+    } else {
+      res.status(400).json({ error: 'rule must be a non-empty string' })
+    }
   })
 
   app.get('/config', (_req, res) => {

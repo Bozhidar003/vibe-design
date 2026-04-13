@@ -143,7 +143,9 @@ function renderFAB(): void {
 
   const fab = document.createElement('button')
   fab.className = `vibe-fab${designMode ? ' active' : ''}`
-  fab.textContent = designMode ? '✕' : '🎨'
+  fab.innerHTML = designMode
+    ? `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`
+    : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3z" fill="currentColor" opacity="0.9"/></svg>`
   fab.title = `Toggle Design Mode (${isMac() ? '⌘' : 'Ctrl'}+D)`
   fab.onclick = () => toggleDesignMode()
   container.appendChild(fab)
@@ -368,7 +370,6 @@ function openMultiSelectPanel(): void {
 
   panel.innerHTML = `
     <div class="vibe-panel-header">
-      <div class="vibe-panel-header-icon">🎯</div>
       <div class="vibe-panel-header-info">
         <div class="vibe-panel-header-name">${elements.length} elements selected</div>
         <div class="vibe-panel-header-path">${escapeHtml(truncate(names, 80))}</div>
@@ -421,7 +422,7 @@ function openMultiSelectPanel(): void {
         <input type="checkbox" data-constraint="screenshots"> Include screenshots
       </label>
       <button class="vibe-submit-btn" data-action="submit">
-        Send to Claude Code <span class="vibe-submit-kbd">${isMac() ? '⌘' : 'Ctrl'}↵</span>
+        Send to Claude <span class="vibe-submit-kbd">${isMac() ? '⌘' : 'Ctrl'}↵</span>
       </button>
     </div>
     <div class="vibe-status-bar" style="display:none;">
@@ -443,34 +444,33 @@ function buildPanelHTML(
   className: string,
   _isMulti: boolean
 ): string {
-  const name = identity.componentName || 'Unknown Element'
-  const path = identity.filePath || 'File not resolved'
-  const line = identity.lineNumber ? `:${identity.lineNumber}` : ''
-  const method = identity.method
+  // Build a useful element description — not "Unknown Element"
+  const el = selectedEl
+  const tagName = el?.tagName.toLowerCase() || 'element'
+  const textHint = el?.textContent?.trim().slice(0, 30) || ''
 
-  const fontInfo = `${parseFloat(styles.fontSize)}px · ${styles.fontWeight} weight · ${styles.color}`
-  const parentEl = selectedEl?.parentElement
-  const parentTag = parentEl?.tagName.toLowerCase() || 'unknown'
-  const parentClasses = parentEl?.className?.split(' ').slice(0, 5).join(' ') || ''
+  // Best name: component name > text content > tag name
+  const name = identity.componentName
+    || (textHint ? `<${tagName}> "${textHint}${(el?.textContent?.trim().length || 0) > 30 ? '...' : ''}"` : `<${tagName}>`)
+  const path = identity.filePath || null
+  const line = identity.lineNumber ? `:${identity.lineNumber}` : ''
+
+  // Compact style summary
+  const fontSize = parseFloat(styles.fontSize)
+  const fontWeight = styles.fontWeight
+  const styleSummary = `${fontSize}px / ${fontWeight}`
 
   return `
     <div class="vibe-panel-header">
-      <div class="vibe-panel-header-icon">🎯</div>
       <div class="vibe-panel-header-info">
         <div class="vibe-panel-header-name">${escapeHtml(name)}</div>
-        <div class="vibe-panel-header-path">${escapeHtml(path)}${line}</div>
-        <div class="vibe-panel-header-usages">Resolution: ${method}</div>
+        ${path ? `<div class="vibe-panel-header-path">${escapeHtml(path)}${line}</div>` : ''}
       </div>
+      <span class="vibe-panel-header-style">${styleSummary}</span>
       <button class="vibe-panel-close" data-action="close">&times;</button>
     </div>
     <div class="vibe-panel-body">
-      ${className ? `<div class="vibe-classes-row">${escapeHtml(truncate(className, 120))}</div>` : ''}
-      <div class="vibe-meta-row">
-        <span class="vibe-meta-tag computed">${escapeHtml(fontInfo)}</span>
-      </div>
-      <div class="vibe-meta-row">
-        <span class="vibe-meta-tag parent">&lt;${escapeHtml(parentTag)}&gt; ${escapeHtml(truncate(parentClasses, 60))}</span>
-      </div>
+      ${className ? `<div class="vibe-classes-row">${escapeHtml(truncate(className, 200))}</div>` : ''}
 
       <div class="vibe-section-label">Quick Actions</div>
       <div class="vibe-quick-actions">
@@ -504,7 +504,7 @@ function buildPanelHTML(
         <input type="checkbox" data-constraint="screenshots"> Include screenshots
       </label>
       <button class="vibe-submit-btn" data-action="submit">
-        Send to Claude Code <span class="vibe-submit-kbd">${isMac() ? '⌘' : 'Ctrl'}↵</span>
+        Send to Claude <span class="vibe-submit-kbd">${isMac() ? '⌘' : 'Ctrl'}↵</span>
       </button>
     </div>
     <div class="vibe-status-bar" style="display:none;">
@@ -626,43 +626,47 @@ function isChecked(panel: HTMLElement, name: string): boolean {
 }
 
 function formatPreview(ctx: EnrichedContext): string {
+  // This preview mirrors what the server sends to Claude
   const lines: string[] = []
+  const t = ctx.target as any
+  const intent = ctx.intent.rawText
 
-  lines.push('# Design Task')
-  lines.push(`Generated: ${new Date().toISOString()}`)
-  lines.push('Status: pending')
-  lines.push('')
+  lines.push(`DESIGN TASK: "${intent}"`)
 
-  lines.push('## Design Intent')
-  lines.push(`"${ctx.intent.rawText}"`)
-  if (ctx.intent.augmentedIntent && ctx.intent.augmentedIntent !== ctx.intent.rawText) {
-    lines.push('')
-    lines.push(ctx.intent.augmentedIntent.split('\n').slice(1).join('\n'))
+  // Show enrichment if present
+  if (ctx.intent.augmentedIntent && ctx.intent.augmentedIntent !== intent) {
+    const enrichment = ctx.intent.augmentedIntent.split('[Enrichment:')[1]?.replace(/\]$/, '').trim()
+    if (enrichment) lines.push(`CONTEXT: ${enrichment}`)
   }
-  if (ctx.intent.quickAction) {
-    lines.push(`\nQuick action: ${ctx.intent.quickAction}`)
+
+  lines.push('')
+
+  if (t.filePath) {
+    lines.push(`FILE: ${t.filePath}${t.lineNumber ? ':' + t.lineNumber : ''}`)
+  } else {
+    lines.push(`ELEMENT: <${t.tagName || '?'}> "${t.textContent || ''}"`)
+    lines.push(`(File will be resolved by searching for classes)`)
   }
-  lines.push('')
 
-  lines.push('## Target Component')
-  lines.push(`**${ctx.target.componentName || 'Unknown'}** · \`${ctx.target.filePath || 'unresolved'}\``)
-  lines.push(`Resolution: ${ctx.target.fiberResolutionMethod}`)
-  lines.push('')
+  if (t.componentName) lines.push(`COMPONENT: ${t.componentName}`)
+  if (ctx.currentState.className) lines.push(`CLASSES: ${ctx.currentState.className}`)
 
-  lines.push('## Current Styling')
-  lines.push(`Classes: ${ctx.currentState.className || 'none'}`)
-  lines.push(`Font: ${ctx.currentState.computedStyles.fontSize} / ${ctx.currentState.computedStyles.fontWeight}`)
-  lines.push(`Color: ${ctx.currentState.computedStyles.color}`)
-  lines.push(`Background: ${ctx.currentState.computedStyles.backgroundColor}`)
-  lines.push('')
+  const cs = ctx.currentState.computedStyles
+  lines.push(`STYLE: ${cs.fontSize} / ${cs.fontWeight} / ${cs.color}`)
 
-  lines.push('## Structural Context')
-  lines.push(ctx.structuralContext.containerInfo)
-  lines.push('')
+  if (ctx.structuralContext.containerInfo) {
+    lines.push(`LAYOUT: ${ctx.structuralContext.containerInfo}`)
+  }
 
-  lines.push('## Constraints')
-  lines.push(`Tailwind only: ${ctx.constraints.tailwindOnly ? 'yes' : 'no'}`)
-  lines.push(`Keep accessible: ${ctx.constraints.keepAccessible ? 'yes' : 'no'}`)
+  const dc = ctx.designContext
+  if (dc.conventionViolations?.length > 0) {
+    lines.push(`ISSUES: ${dc.conventionViolations.join('; ')}`)
+  }
+
+  const rules = []
+  if (ctx.constraints.tailwindOnly) rules.push('Tailwind only')
+  if (ctx.constraints.keepAccessible) rules.push('WCAG AA')
+  if (rules.length) lines.push(`RULES: ${rules.join(', ')}`)
 
   return lines.join('\n')
 }
@@ -762,40 +766,48 @@ async function submitTask(): Promise<void> {
     console.log('[vibe-design] Task accepted:', result)
     showStatus(panel, 'working', 'Claude Code is working...')
 
-    // Reset the button immediately
+    // Keep button disabled — poll will re-enable it when done
     if (submitBtn) {
-      submitBtn.disabled = false
-      submitBtn.innerHTML = `Send to Claude Code <span class="vibe-submit-kbd">${isMac() ? '⌘' : 'Ctrl'}↵</span>`
+      submitBtn.textContent = 'Working...'
     }
 
-    // Poll for completion since WebSocket may not be connected
-    pollForDone(panel)
+    pollForDone(panel, submitBtn)
   } catch (err) {
     showStatus(panel, 'error', `Failed: ${(err as Error).message}`)
     if (submitBtn) {
       submitBtn.disabled = false
-      submitBtn.innerHTML = `Send to Claude Code <span class="vibe-submit-kbd">${isMac() ? '⌘' : 'Ctrl'}↵</span>`
+      submitBtn.innerHTML = `Send to Claude <span class="vibe-submit-kbd">${isMac() ? '⌘' : 'Ctrl'}↵</span>`
     }
   }
 }
 
-function pollForDone(panel: HTMLElement): void {
+function pollForDone(panel: HTMLElement, submitBtn: HTMLButtonElement | null): void {
   let attempts = 0
-  const maxAttempts = 60 // poll for up to 60 seconds
+  const maxAttempts = 120 // poll for up to 2 minutes
+
+  function resetButton() {
+    if (submitBtn) {
+      submitBtn.disabled = false
+      submitBtn.innerHTML = `Send to Claude <span class="vibe-submit-kbd">${isMac() ? '⌘' : 'Ctrl'}↵</span>`
+    }
+  }
+
   const interval = setInterval(async () => {
     attempts++
     if (attempts > maxAttempts) {
       clearInterval(interval)
-      showStatus(panel, 'done', 'Task sent (check your editor)')
+      showStatus(panel, 'done', 'Timed out — check your editor')
+      resetButton()
       return
     }
     try {
       const resp = await fetch(`${VIBE_URL}/health`)
       if (resp.ok) {
         const data = await resp.json()
-        if (data.claudeBusy === false && attempts > 2) {
+        if (data.claudeBusy === false && attempts > 3) {
           clearInterval(interval)
           showStatus(panel, 'done', 'Changes applied ✓')
+          resetButton()
         }
       }
     } catch {
@@ -825,7 +837,7 @@ function updateStatusBar(): void {
     const submitBtn = panel.querySelector('.vibe-submit-btn') as HTMLButtonElement
     if (submitBtn) {
       submitBtn.disabled = false
-      submitBtn.innerHTML = `Send to Claude Code <span class="vibe-submit-kbd">${isMac() ? '⌘' : 'Ctrl'}↵</span>`
+      submitBtn.innerHTML = `Send to Claude <span class="vibe-submit-kbd">${isMac() ? '⌘' : 'Ctrl'}↵</span>`
     }
   }
 }
