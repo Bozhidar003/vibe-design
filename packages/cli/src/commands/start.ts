@@ -24,7 +24,7 @@ export async function startCommand(projectDir: string, options: { simple?: boole
   const serverSpinner = ora('Starting vibe server...').start()
 
   try {
-    const { createVibeServer } = await import('@vibe-design/server')
+    const { createVibeServer } = await import('@bozhidar003/vibe-design-server')
     const { config } = await createVibeServer(projectDir, { overlayMode: mode })
 
     serverSpinner.succeed(`Vibe server running on http://localhost:${config.port}`)

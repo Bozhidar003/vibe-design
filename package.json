@@ -5,11 +5,23 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspaces && cp packages/overlay/dist/overlay.global.js packages/cli/dist/ && cp README.md packages/cli/ && cp LICENSE packages/cli/",
     "dev": "npm run dev --workspaces --if-present",
     "clean": "rm -rf packages/*/dist",
+    "test": "echo \"No tests configured yet\"",
     "vibe": "node packages/cli/dist/index.js",
-    "setup": "node packages/cli/dist/index.js setup"
+    "setup": "node packages/cli/dist/index.js setup",
+    "publish:all": "npm run build && npm publish --workspaces --access public"
+  },
+  "author": "Bozhidar Kamenski",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bozhdiar003/vibe_design.git"
+  },
+  "homepage": "https://github.com/Bozhdiar003/vibe_design#readme",
+  "bugs": {
+    "url": "https://github.com/Bozhdiar003/vibe_design/issues"
   },
   "engines": {
     "node": ">=18"

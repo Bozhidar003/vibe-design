@@ -9,7 +9,7 @@ interface VibeDesignOptions {
  * in development mode.
  *
  * Usage in next.config.js:
- *   const { withVibeDesign } = require('@vibe-design/adapter-nextjs')
+ *   const { withVibeDesign } = require('@bozhidar003/vibe-design-adapter-nextjs')
  *   module.exports = withVibeDesign({ ...yourConfig })
  */
 export function withVibeDesign(

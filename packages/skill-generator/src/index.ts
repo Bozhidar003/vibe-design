@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from 'fs/promises'
 import { join } from 'path'
-import type { DetectedStack, DesignToken, ComponentPattern } from '@vibe-design/detector'
+import type { DetectedStack, DesignToken, ComponentPattern } from '@bozhidar003/vibe-design-detector'
 
 export { generateSkills, generateVibeConfig, generateClaudeSkill }
 

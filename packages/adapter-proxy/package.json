@@ -1,15 +1,49 @@
 {
-  "name": "@vibe-design/adapter-proxy",
+  "name": "@bozhidar003/vibe-design-adapter-proxy",
+  "private": true,
   "version": "0.1.0",
+  "description": "HTTP proxy adapter for Vibe Design",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "license": "MIT",
+  "author": "Bozhidar Kamenski",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bozhdiar003/vibe_design.git",
+    "directory": "packages/adapter-proxy"
+  },
+  "homepage": "https://github.com/Bozhdiar003/vibe_design#readme",
+  "bugs": {
+    "url": "https://github.com/Bozhdiar003/vibe_design/issues"
+  },
+  "keywords": [
+    "vibe-design",
+    "proxy",
+    "adapter"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "bin": {
     "vibe-proxy": "./dist/index.js"
   },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch"
+    "dev": "tsup --watch",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "http-proxy": "^1.18.0"

@@ -9,4 +9,9 @@ export default defineConfig({
   banner: {
     js: '#!/usr/bin/env node',
   },
+  noExternal: [
+    '@bozhidar003/vibe-design-detector',
+    '@bozhidar003/vibe-design-skill-generator',
+    '@bozhidar003/vibe-design-server',
+  ],
 })

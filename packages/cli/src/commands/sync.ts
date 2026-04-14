@@ -2,8 +2,8 @@ import { access } from 'fs/promises'
 import { join } from 'path'
 import chalk from 'chalk'
 import ora from 'ora'
-import { detectStack, type DetectedStack } from '@vibe-design/detector'
-import { generateSkills, generateVibeConfig } from '@vibe-design/skill-generator'
+import { detectStack, type DetectedStack } from '@bozhidar003/vibe-design-detector'
+import { generateSkills, generateVibeConfig } from '@bozhidar003/vibe-design-skill-generator'
 import { writeFile } from 'fs/promises'
 
 async function fileExists(path: string): Promise<boolean> {

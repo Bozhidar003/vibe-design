@@ -8,7 +8,7 @@ interface VibeDesignOptions {
  * Vite plugin that injects the Vibe Design overlay in development mode.
  *
  * Usage in vite.config.ts:
- *   import { vibeDesign } from '@vibe-design/adapter-vite'
+ *   import { vibeDesign } from '@bozhidar003/vibe-design-adapter-vite'
  *   export default defineConfig({
  *     plugins: [react(), vibeDesign()],
  *   })

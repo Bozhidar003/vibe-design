@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import ora from 'ora'
-import { detectStack } from '@vibe-design/detector'
+import { detectStack } from '@bozhidar003/vibe-design-detector'
 
 export async function detectCommand(projectDir: string): Promise<void> {
   console.log('')

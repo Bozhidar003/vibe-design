@@ -1,24 +1,29 @@
 # Vibe Design
 
+[![npm version](https://img.shields.io/npm/v/@bozhidar003/vibe-design.svg)](https://www.npmjs.com/package/@bozhidar003/vibe-design)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+
 **Click what's broken. Describe what you want. Claude fixes it.**
 
 Vibe Design injects a design overlay into your dev server. Click any element, say what you want to change, and Claude Code edits the code for you — with full context about your component, styles, design tokens, and conventions.
 
-## Get Started
-
-### 1. Install
+## Install
 
 ```bash
-git clone https://github.com/Bozhdiar003/vibe_design.git
-cd vibe_design
-npm install && npm run build
+npm install -g @bozhidar003/vibe-design
 ```
 
-### 2. Run it on your project
+Or use directly with npx:
+
+```bash
+npx @bozhidar003/vibe-design setup ~/my-project
+```
+
+## Quick Start
 
 **Terminal 1** — start vibe-design:
 ```bash
-npm run setup -- ~/my-project
+vibe-design setup ~/my-project
 ```
 
 **Terminal 2** — start your dev server:
@@ -26,20 +31,16 @@ npm run setup -- ~/my-project
 cd ~/my-project && npm run dev
 ```
 
-### 3. Use it
-
 Open your app in the browser. Press **Cmd+D**. Click any element. Type what you want. Hit Send.
 
-That's it.
-
-> If you're already inside your project directory, just run `npm run setup` with no arguments.
+> If you're already inside your project directory, just run `vibe-design setup` with no arguments.
 
 ## Simple Mode
 
 Skip the FAB button and quick actions. Just hover, click, type:
 
 ```bash
-npm run vibe -- start --simple --dir /path/to/your/project
+vibe-design start --simple --dir /path/to/your/project
 ```
 
 ## What Happens When You Click Send
@@ -69,8 +70,8 @@ All commands accept `--dir <path>` to target a project.
 Rules you define are included in every prompt to Claude:
 
 ```bash
-npm run vibe -- design-system add "Buttons use rounded-full" --dir ./my-project
-npm run vibe -- design-system add "Primary color is blue-600" --dir ./my-project
+vibe-design design-system add "Buttons use rounded-full" --dir ./my-project
+vibe-design design-system add "Primary color is blue-600" --dir ./my-project
 ```
 
 `init` creates sensible defaults. Edit `.vibe/design-system.json` directly or use the CLI.
@@ -105,7 +106,7 @@ your-project/
 
 Zero impact. The overlay and adapter are gated behind `NODE_ENV === "development"` and tree-shaken out of production builds. No packages are installed in your project.
 
-To fully remove: `npm run vibe -- eject --dir ./my-project`
+To fully remove: `vibe-design eject --dir ./my-project`
 
 ## Requirements
 
@@ -113,6 +114,23 @@ To fully remove: `npm run vibe -- eject --dir ./my-project`
 - Claude Code CLI installed and authenticated
 - A web project with a dev server
 
+## Development
+
+```bash
+git clone https://github.com/Bozhdiar003/vibe_design.git
+cd vibe_design
+npm install
+npm run build
+```
+
+## Publishing (CI/CD)
+
+This project uses GitHub Actions to publish to npm on release creation. Set the `NPM_TOKEN` secret in your GitHub repo settings (Settings > Secrets > Actions > New repository secret).
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+
 ## License
 
-MIT
+[MIT](./LICENSE) &copy; Bozhidar Kamenski

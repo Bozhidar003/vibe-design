@@ -1,15 +1,50 @@
 {
-  "name": "@vibe-design/adapter-remix",
+  "name": "@bozhidar003/vibe-design-adapter-remix",
+  "private": true,
   "version": "0.1.0",
+  "description": "Remix adapter for Vibe Design",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "license": "MIT",
+  "author": "Bozhidar Kamenski",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bozhdiar003/vibe_design.git",
+    "directory": "packages/adapter-remix"
+  },
+  "homepage": "https://github.com/Bozhdiar003/vibe_design#readme",
+  "bugs": {
+    "url": "https://github.com/Bozhdiar003/vibe_design/issues"
+  },
+  "keywords": [
+    "vibe-design",
+    "remix",
+    "adapter"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch"
+    "dev": "tsup --watch",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@vibe-design/adapter-vite": "*"
+    "@bozhidar003/vibe-design-adapter-vite": "^0.1.0"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

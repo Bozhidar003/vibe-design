@@ -323,7 +323,7 @@ export async function createVibeServer(projectDir: string, options?: { overlayMo
       const { fileURLToPath } = await import('url')
       const { dirname } = await import('path')
       const paths = [
-        join(projectDir, 'node_modules', '@vibe-design', 'overlay', 'dist', 'overlay.global.js'),
+        join(dirname(fileURLToPath(import.meta.url)), 'overlay.global.js'),
         join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'overlay', 'dist', 'overlay.global.js'),
       ]
       for (const p of paths) {

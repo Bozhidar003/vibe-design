@@ -12,13 +12,13 @@ interface VibeDesignRemixOptions {
  * 2. Injects the overlay script via Remix's HTML transform
  *
  * For Remix v2 (Vite-based), add to vite.config.ts:
- *   import { vibeDesignRemix } from '@vibe-design/adapter-remix'
+ *   import { vibeDesignRemix } from '@bozhidar003/vibe-design-adapter-remix'
  *   export default defineConfig({
  *     plugins: [remix(), vibeDesignRemix()],
  *   })
  *
  * For Remix v1 (non-Vite), add to entry.client.tsx:
- *   import '@vibe-design/adapter-remix/client'
+ *   import '@bozhidar003/vibe-design-adapter-remix/client'
  */
 export function vibeDesignRemix(options: VibeDesignRemixOptions = {}): Plugin {
   const port = options.port ?? 2337
@@ -69,7 +69,7 @@ export function vibeDesignRemix(options: VibeDesignRemixOptions = {}): Plugin {
 /**
  * Client-side loader for Remix v1 (non-Vite).
  * Import in entry.client.tsx:
- *   import '@vibe-design/adapter-remix/client'
+ *   import '@bozhidar003/vibe-design-adapter-remix/client'
  */
 export function injectVibeOverlay(port = 2337): void {
   if (typeof window === 'undefined') return

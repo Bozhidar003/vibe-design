@@ -14,7 +14,7 @@ interface VibeDesignSvelteKitOptions {
  *
  * Usage in vite.config.ts:
  *   import { sveltekit } from '@sveltejs/kit/vite'
- *   import { vibeDesignSvelteKit } from '@vibe-design/adapter-sveltekit'
+ *   import { vibeDesignSvelteKit } from '@bozhidar003/vibe-design-adapter-sveltekit'
  *
  *   export default defineConfig({
  *     plugins: [sveltekit(), vibeDesignSvelteKit()],
@@ -88,7 +88,7 @@ export function vibeDesignSvelteKit(options: VibeDesignSvelteKitOptions = {}): P
  * SvelteKit handle hook for server-side injection.
  * Add to src/hooks.server.ts:
  *
- *   import { vibeDesignHandle } from '@vibe-design/adapter-sveltekit'
+ *   import { vibeDesignHandle } from '@bozhidar003/vibe-design-adapter-sveltekit'
  *   export const handle = vibeDesignHandle()
  *
  * Or combine with existing handles:

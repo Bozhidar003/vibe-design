@@ -5,3 +5,11 @@ dist/
 .vibe/screenshots/
 .env
 .DS_Store
+.npmrc
+
+# Build artifacts copied to CLI package
+packages/cli/README.md
+packages/cli/LICENSE
+packages/cli/overlay.global.js
+packages/*/LICENSE
+!LICENSE

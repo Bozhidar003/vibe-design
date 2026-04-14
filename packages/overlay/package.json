@@ -1,11 +1,42 @@
 {
-  "name": "@vibe-design/overlay",
+  "name": "@bozhidar003/vibe-design-overlay",
+  "private": true,
   "version": "0.1.0",
+  "description": "Browser overlay UI for Vibe Design",
   "type": "module",
-  "main": "dist/overlay.global.js",
+  "license": "MIT",
+  "author": "Bozhidar Kamenski",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bozhdiar003/vibe_design.git",
+    "directory": "packages/overlay"
+  },
+  "homepage": "https://github.com/Bozhdiar003/vibe_design#readme",
+  "bugs": {
+    "url": "https://github.com/Bozhdiar003/vibe_design/issues"
+  },
+  "keywords": [
+    "vibe-design",
+    "overlay",
+    "browser"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "main": "./dist/overlay.global.js",
+  "exports": {
+    ".": "./dist/overlay.global.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch"
+    "dev": "tsup --watch",
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

@@ -2,12 +2,12 @@ import { readFile, writeFile, mkdir, access } from 'fs/promises'
 import { join } from 'path'
 import chalk from 'chalk'
 import ora from 'ora'
-import { detectStack, type DetectedStack } from '@vibe-design/detector'
+import { detectStack, type DetectedStack } from '@bozhidar003/vibe-design-detector'
 import {
   generateSkills,
   generateVibeConfig,
   generateClaudeSkill,
-} from '@vibe-design/skill-generator'
+} from '@bozhidar003/vibe-design-skill-generator'
 
 const FRONTEND_DESIGN_SKILL = `# Frontend Design Skill
 
@@ -350,6 +350,32 @@ export default withVibeDesign(nextConfig)
   }
 }
 
+const VITE_PLUGIN_INLINE = `
+// --- vibe-design adapter (injected by vibe-design init, dev-only) ---
+function vibeDesign(port = 2337) {
+  return {
+    name: 'vibe-design',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/__vibe', (req, res) => {
+        const http = require('http');
+        const proxyReq = http.request(
+          'http://localhost:' + port + req.url,
+          { method: req.method, headers: { ...req.headers, host: 'localhost:' + port } },
+          (proxyRes) => { res.writeHead(proxyRes.statusCode, proxyRes.headers); proxyRes.pipe(res); }
+        );
+        proxyReq.on('error', () => { res.writeHead(502); res.end('Vibe server not running'); });
+        req.pipe(proxyReq);
+      });
+    },
+    transformIndexHtml() {
+      return [{ tag: 'script', attrs: { src: '/__vibe/overlay.js', async: true }, injectTo: 'body' }];
+    },
+  };
+}
+// --- end vibe-design adapter ---
+`
+
 async function injectViteAdapter(projectDir: string): Promise<void> {
   const configFiles = ['vite.config.ts', 'vite.config.js', 'vite.config.mjs']
 
@@ -359,13 +385,12 @@ async function injectViteAdapter(projectDir: string): Promise<void> {
       let content = await readFile(fullPath, 'utf-8')
       if (content.includes('vibeDesign')) return
 
-      const importLine = `import { vibeDesign } from '@vibe-design/adapter-vite'\n`
-
-      // Insert plugin into plugins array
-      content = importLine + content.replace(
+      // Inject inline plugin + add to plugins array
+      content = content.replace(
         /plugins\s*:\s*\[/,
-        'plugins: [vibeDesign(), '
+        `plugins: [vibeDesign(), `
       )
+      content = VITE_PLUGIN_INLINE + '\n' + content
       await writeFile(fullPath, content)
       return
     }
@@ -380,14 +405,14 @@ async function injectSvelteKitAdapter(projectDir: string): Promise<void> {
     const fullPath = join(projectDir, file)
     if (await fileExists(fullPath)) {
       let content = await readFile(fullPath, 'utf-8')
-      if (content.includes('vibeDesignSvelteKit')) return
+      if (content.includes('vibeDesign')) return
 
-      const importLine = `import { vibeDesignSvelteKit } from '@vibe-design/adapter-sveltekit'\n`
-
-      content = importLine + content.replace(
+      // Reuse the same Vite plugin — works for SvelteKit too
+      content = content.replace(
         /plugins\s*:\s*\[/,
-        'plugins: [vibeDesignSvelteKit(), '
+        `plugins: [vibeDesign(), `
       )
+      content = VITE_PLUGIN_INLINE + '\n' + content
       await writeFile(fullPath, content)
       return
     }
@@ -398,23 +423,21 @@ async function injectSvelteKitAdapter(projectDir: string): Promise<void> {
 function printManualAdapterInstructions(type: string, _stack: DetectedStack): void {
   const instructions: Record<string, string[]> = {
     vite: [
-      "  Add to your vite.config.ts:",
-      "    import { vibeDesign } from '@vibe-design/adapter-vite'",
-      "    plugins: [vibeDesign(), ...]",
+      "  Run: vibe-design init --dir . (auto-injects adapter)",
+      "  Or manually add the vibeDesign() plugin to your vite.config plugins array.",
     ],
     sveltekit: [
-      "  Add to your vite.config.ts:",
-      "    import { vibeDesignSvelteKit } from '@vibe-design/adapter-sveltekit'",
-      "    plugins: [sveltekit(), vibeDesignSvelteKit()]",
+      "  Run: vibe-design init --dir . (auto-injects adapter)",
+      "  Or manually add the vibeDesign() plugin to your vite.config plugins array.",
     ],
     remix: [
-      "  For Remix v2 (Vite), add to vite.config.ts:",
-      "    import { vibeDesignRemix } from '@vibe-design/adapter-remix'",
-      "    plugins: [remix(), vibeDesignRemix()]",
+      "  For Remix v2 (Vite):",
+      "    Run: vibe-design init --dir . (auto-injects adapter)",
       "",
-      "  For Remix v1, add to entry.client.tsx:",
-      "    import { injectVibeOverlay } from '@vibe-design/adapter-remix'",
-      "    injectVibeOverlay()",
+      "  For Remix v1 (non-Vite), load the overlay in entry.client.tsx:",
+      "    const script = document.createElement('script');",
+      "    script.src = 'http://localhost:2337/overlay.js';",
+      "    document.body.appendChild(script);",
     ],
   }
 
