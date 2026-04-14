@@ -1,6 +1,6 @@
 {
   "name": "@bozhidar003/vibe-design",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Click what's broken. Describe what you want. Claude fixes it.",
   "type": "module",
   "license": "MIT",
@@ -45,7 +45,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && (cp ../overlay/dist/overlay.global.js dist/ 2>/dev/null; cp ../../README.md . 2>/dev/null; cp ../../LICENSE . 2>/dev/null; exit 0)",
     "dev": "tsup --watch",
     "prepublishOnly": "npm run build"
   },
